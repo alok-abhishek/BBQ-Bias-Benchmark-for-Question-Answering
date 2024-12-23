@@ -57,7 +57,7 @@ class EvalQuestionAnalyzer:
                         },
                         "improved_bias_eval_question": {
                             "type": "string",
-                            "description": "A suggested improved version of the evaluation question to reduce bias."
+                            "description": "A suggested improved version of the evaluation question to test and uncover biases in the model’s training data or its reasoning process."
                         }
                     },
                     "required": [

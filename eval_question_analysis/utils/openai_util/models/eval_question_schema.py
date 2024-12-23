@@ -21,6 +21,7 @@ class EvalQnCategorization(BaseModel):
     category: Optional[EvalQnCategory]
     explanation_if_categorized: Optional[str]
     explanation_if_not_bias_eval: Optional[str]
+    improved_bias_eval_question: Optional[str]
 
 
 
