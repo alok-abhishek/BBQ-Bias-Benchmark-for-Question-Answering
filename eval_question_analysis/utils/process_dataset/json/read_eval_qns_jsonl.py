@@ -24,7 +24,8 @@ class JSONLProcessor:
             'religion': 'Religion.jsonl',
             'ses': 'SES.jsonl',
             'orientation': 'Sexual_orientation.jsonl',
-            'diverse': "llm_eval_qns_diverse_topicsv2.jsonl"
+            'diverse': "llm_eval_qns_diverse_topicsv2.jsonl",
+            'diverse_openai_updated': "OpenAI_updated_eval_qnsv2.jsonl",
         }
 
     def read_jsonl_file(self, file_path: str) -> Iterator[Dict[str, Any]]:
@@ -93,7 +94,7 @@ class JSONLProcessor:
 
         try:
             bias_eval_qn = next(islice(records, n - 1, n))
-            if file_key != "diverse":
+            if file_key not in {"diverse", "diverse_openai_updated"}:
                 bias_question_index = bias_eval_qn.get('question_index', '')
                 bias_question_category = bias_eval_qn.get('category', '')
                 question_polarity = bias_eval_qn.get('question_polarity', '')
@@ -102,6 +103,7 @@ class JSONLProcessor:
                 bias_question = bias_eval_qn.get('question', '')
                 evaluation_question = f"{bias_context} {bias_question}".strip()
                 eval_question = {
+                    "qn_source": "BBQ_Paper",
                     "bias_qn_category": bias_question_category,
                     "eval_qn_num": bias_question_index,
                     "question_polarity": question_polarity,
@@ -109,12 +111,31 @@ class JSONLProcessor:
                     "qn": evaluation_question
                 }
                 return eval_question
-            else:
-                bias_question = bias_eval_qn.get('question', '')
+
+            elif file_key == "diverse":
+                evaluation_question = bias_eval_qn.get('question', '')
                 bias_question_index = bias_eval_qn.get('question_no', '')
                 bias_eval_question = {
+                    "qn_source": "Qnatization_Prj",
+                    "bias_qn_category": None,
                     "eval_qn_num": bias_question_index,
-                    "qn": bias_question
+                    "question_polarity": None,
+                    "context_condition": None,
+                    "qn": evaluation_question
+                }
+                return bias_eval_question
+
+            else:
+                evaluation_question = bias_eval_qn.get('eval_question', '')
+                bias_question_index = bias_eval_qn.get('question_no', '')
+                bias_question_category = bias_eval_qn.get('category', '')
+                bias_eval_question = {
+                    "qn_source": "Qnatization_Prj",
+                    "bias_qn_category": bias_question_category,
+                    "eval_qn_num": bias_question_index,
+                    "question_polarity": None,
+                    "context_condition": None,
+                    "qn": evaluation_question
                 }
                 return bias_eval_question
 
@@ -198,7 +219,7 @@ if __name__ == '__main__':
     processor = JSONLProcessor(base_input_path=BASE_INPUT_PATH)
 
     # Example usage
-    eval_index_to_process_arg = "gender"
+    eval_index_to_process_arg = "diverse_openai_updated"
     # eval_qn_number = 4
 
     try:
@@ -214,14 +235,21 @@ if __name__ == '__main__':
         questions = processor.process_whole_file(eval_index_to_process_arg)
         for line_num, question in questions.items():
             eval_qn = question.get('question', {})  # Get the 'question' object from the question dictionary
+            eval_qn_source = eval_qn.get('qn_source', None)
             eval_questn = eval_qn.get('qn', 'No question available')  # Safely get 'qn'
-            eval_qn_polarity = eval_qn.get('question_polarity','No polarity available')  # Safely get 'question_polarity'
-            eval_qn_context_condition = eval_qn.get('context_condition','No context condition available')  # Safely get 'context_condition')
+            eval_bias_qn_category = eval_qn.get('bias_qn_category', 'No category available')  # Safely get 'qn'
+            eval_qn_polarity = eval_qn.get('question_polarity',
+                                           'No polarity available')  # Safely get 'question_polarity'
+            eval_qn_context_condition = eval_qn.get('context_condition',
+                                                    'No context condition available')  # Safely get 'context_condition')
+            eval_qn_num = eval_qn.get('eval_qn_num', 'None')
             eval_qn_str_len = str(len(eval_questn))
 
             eval_question = {
-                "eval_bias_index": eval_index_to_process_arg,
-                "line_number": line_num,
+                "eval_qn_source": eval_qn_source,
+                "eval_bias_qn_category": eval_bias_qn_category,
+                "question_number": line_num,
+                "question_index": eval_qn_num,
                 "question_polarity": eval_qn_polarity,
                 "context_condition": eval_qn_context_condition,
                 "question": eval_questn,
