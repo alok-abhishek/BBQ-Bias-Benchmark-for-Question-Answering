@@ -3,15 +3,10 @@ import os
 from typing import Iterator, Dict, Any, Optional
 from itertools import islice
 import logging
+from global_utils.logging_config import configure_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+
+
 
 class JSONLProcessor:
     def __init__(self, base_input_path: str):
@@ -83,28 +78,45 @@ class JSONLProcessor:
         file_path = self.get_file_path(file_key)
         return self.read_jsonl_file(file_path)
 
-    def get_nth_record(self, file_key: str, n: int) -> Optional[str]:
+    def get_nth_record(self, file_key: str, n: int) -> Optional[Dict[str, Any]]:
         """
         Get the nth record from the specified JSONL file.
 
         Args:
-            file_key: Key to identify the file to process
-            n: Record number to retrieve (1-based index)
+            file_key (str): Key to identify the file to process.
+            n (int): Record number to retrieve (1-based index).
 
         Returns:
-            Combined context and question as a single string, or None if not found
+            Optional[Dict[str, Any]]: The nth record as a dictionary or None if not found.
         """
         records = self.process_eval_qn_data_file(file_key)
 
         try:
-            eval_qn = next(islice(records, n - 1, n))
+            bias_eval_qn = next(islice(records, n - 1, n))
             if file_key != "diverse":
-                context = eval_qn.get('context', '')
-                question = eval_qn.get('question', '')
-                return f"{context} {question}".strip()
+                bias_question_index = bias_eval_qn.get('question_index', '')
+                bias_question_category = bias_eval_qn.get('category', '')
+                question_polarity = bias_eval_qn.get('question_polarity', '')
+                context_condition = bias_eval_qn.get('context_condition', '')
+                bias_context = bias_eval_qn.get('context', '')
+                bias_question = bias_eval_qn.get('question', '')
+                evaluation_question = f"{bias_context} {bias_question}".strip()
+                eval_question = {
+                    "bias_qn_category": bias_question_category,
+                    "eval_qn_num": bias_question_index,
+                    "question_polarity": question_polarity,
+                    "context_condition": context_condition,
+                    "qn": evaluation_question
+                }
+                return eval_question
             else:
-                question = eval_qn.get('question', '')
-                return f"{question}".strip()
+                bias_question = bias_eval_qn.get('question', '')
+                bias_question_index = bias_eval_qn.get('question_no', '')
+                bias_eval_question = {
+                    "eval_qn_num": bias_question_index,
+                    "qn": bias_question
+                }
+                return bias_eval_question
 
         except StopIteration:
             logging.error(f"Record number {n} not found in file '{file_key}'")
@@ -131,7 +143,54 @@ class JSONLProcessor:
             logging.error(f"Error counting lines in file '{file_key}': {e}")
             return 0
 
+
+    def process_whole_file(self, eval_index_to_process: str) -> Dict[int, dict]:
+        """
+        Process a single JSONL file and return its content as a dictionary.
+
+        Args:
+            eval_index_to_process (str): The key of the JSONL file to process.
+
+        Returns:
+            Dict[int, dict]: A dictionary with line numbers as keys and corresponding JSON objects as values.
+        """
+        result: Dict[int, dict] = {}
+        try:
+            if eval_index_to_process in self.eval_qn_jsonl_files:
+                line_count = self.count_lines(eval_index_to_process)
+                logging.info(f"Number of lines in '{eval_index_to_process}' file: {line_count}")
+
+                for line_num in range(1, line_count + 1):
+                    record = self.get_nth_record(eval_index_to_process, line_num)
+                    if record:
+                        result[line_num] = {
+                            "eval_index": eval_index_to_process,
+                            "line_number": line_num,
+                            "question": record
+                        }
+                    else:
+                        logging.info(f"[{eval_index_to_process}] No record found for line {line_num}.")
+                        result[line_num] = {
+                            "eval_index": eval_index_to_process,
+                            "line_number": line_num,
+                            "question": None,
+                            "error": "No question found"
+                        }
+            else:
+                logging.error(f"Invalid file key: {eval_index_to_process}")
+        except KeyError as e:
+            logging.error(f"KeyError: {e}")
+        except ValueError as e:
+            logging.error(f"ValueError: {e}")
+
+        return result
+
+
+
+
 if __name__ == '__main__':
+
+    configure_logging(level=logging.INFO)
     # Base path for input files
     BASE_INPUT_PATH = "../../../../data/"
 
@@ -139,17 +198,37 @@ if __name__ == '__main__':
     processor = JSONLProcessor(base_input_path=BASE_INPUT_PATH)
 
     # Example usage
-    eval_index_to_process = "diverse"
-    eval_qn_number = 4
+    eval_index_to_process_arg = "gender"
+    # eval_qn_number = 4
 
     try:
-        line_count = processor.count_lines(eval_index_to_process)
-        logging.info(f"Number of lines in '{eval_index_to_process}' file: {line_count}")
+        line_count = processor.count_lines(eval_index_to_process_arg)
+        logging.info(f"Number of lines in '{eval_index_to_process_arg}' file: {line_count}")
+        """
         record = processor.get_nth_record(eval_index_to_process, eval_qn_number)
         if record:
             logging.info(f"Retrieved Record: {record}")
         else:
             logging.info("No record found.")
+        """
+        questions = processor.process_whole_file(eval_index_to_process_arg)
+        for line_num, question in questions.items():
+            eval_qn = question.get('question', {})  # Get the 'question' object from the question dictionary
+            eval_questn = eval_qn.get('qn', 'No question available')  # Safely get 'qn'
+            eval_qn_polarity = eval_qn.get('question_polarity','No polarity available')  # Safely get 'question_polarity'
+            eval_qn_context_condition = eval_qn.get('context_condition','No context condition available')  # Safely get 'context_condition')
+            eval_qn_str_len = str(len(eval_questn))
+
+            eval_question = {
+                "eval_bias_index": eval_index_to_process_arg,
+                "line_number": line_num,
+                "question_polarity": eval_qn_polarity,
+                "context_condition": eval_qn_context_condition,
+                "question": eval_questn,
+                "question_string_length": eval_qn_str_len
+            }
+            print(eval_question)
+
     except KeyError as e:
         logging.error(e)
     except ValueError as e:

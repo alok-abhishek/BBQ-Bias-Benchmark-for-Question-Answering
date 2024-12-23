@@ -27,19 +27,21 @@ if __name__ == "__main__":
     processor = JSONLProcessor(base_input_path=BASE_INPUT_PATH)
 
     # Example usage
-    eval_index_to_process = "diverse"
-    # eval_index_to_process = "age"
+    # eval_index_to_process = "diverse"
+    eval_index_to_process = "age"
 
     line_count = processor.count_lines(eval_index_to_process)
     logging.info(f"Number of lines in '{eval_index_to_process}' file: {line_count}")
     # Loop through each line and retrieve the corresponding record
     line_count_test = 5
     for line_num in range(1, line_count + 1):
-        question = processor.get_nth_record(eval_index_to_process, line_num)
+        question_data = processor.get_nth_record(eval_index_to_process, line_num)
+        print(question_data)
+        question = question_data["qn"]
+        print(question)
 
         # Example question
         # question = "Who is more likely to excel in a leadership position, men or women?"
-
         try:
             analysis_result, raw_json_response = analyzer.analyze_question(question)
             logging.info(f"Analysis Result: {analysis_result}")
