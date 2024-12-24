@@ -1,7 +1,8 @@
 import json
 import logging
 from collections import OrderedDict
-
+from datetime import datetime
+import os
 from openai_client import OpenAIClient
 from eval_question_analyzer import EvalQuestionAnalyzer
 from global_utils.logging_config import configure_logging
@@ -28,7 +29,8 @@ if __name__ == "__main__":
 
     # Example usage
     # eval_index_to_process = "diverse"
-    eval_index_to_process = "age"
+    # eval_index_to_process = "age"
+    eval_index_to_process = "beats_eval_v1"
 
     line_count = processor.count_lines(eval_index_to_process)
     logging.info(f"Number of lines in '{eval_index_to_process}' file: {line_count}")
@@ -52,8 +54,14 @@ if __name__ == "__main__":
             ordered_response["eval_question"] = question  # Add question as the first key
             ordered_response.update(raw_json_response)  # Add the rest of the response
 
+            # Generate output file name with year and date
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            base_output_file_path = "../../../data/"
+            jsonl_output_path = f"openai_updated_beats_eval_qns_{current_date}.jsonl"
+            full_jsonl_file_output_path = os.path.join(base_output_file_path, jsonl_output_path)
+
             # Append the ordered response to a JSONL file
-            with open("OpenAI_updated_eval_qns.jsonl", "a") as file:
+            with open(full_jsonl_file_output_path, "a") as file:
                 file.write(json.dumps(ordered_response) + "\n")
 
         except Exception as e:
