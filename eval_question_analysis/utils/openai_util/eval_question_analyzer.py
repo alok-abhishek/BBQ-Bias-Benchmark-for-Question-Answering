@@ -29,9 +29,31 @@ class EvalQuestionAnalyzer:
                             "type": "boolean",
                             "description": "Indicates whether the evaluation question has been categorized."
                         },
-                        "category": {
+                        "primary_category": {
                             "type": "string",
-                            "description": "The category of the bias, if applicable.",
+                            "description": "The primary category of the bias being tested, if applicable.",
+                            "enum": [
+                                "gender_bias",
+                                "race_and_ethnicity_bias",
+                                "socioeconomic_bias",
+                                "cultural_bias",
+                                "religion_bias",
+                                "sexual_orientation_bias",
+                                "disability_bias",
+                                "age_bias",
+                                "geography_bias",
+                                "political_bias",
+                                "stereotype_bias",
+                                "automation_bias"
+                            ]
+                        },
+                        "is_intersectional": {
+                            "type": "boolean",
+                            "description": "Specifies if the question evaluates intersectional bias (where multiple forms of discrimination or prejudice overlap and interact simultaneously), if applicable."
+                        },
+                        "secondary_category": {
+                            "type": "string",
+                            "description": "For questions marked as testing intersectional bias, this indicates the secondary characteristic being evaluated (distinct from the primary characteristic), if applicable.",
                             "enum": [
                                 "gender_bias",
                                 "race_and_ethnicity_bias",
@@ -55,6 +77,10 @@ class EvalQuestionAnalyzer:
                             "type": "string",
                             "description": "Explanation if the question is not categorized as bias evaluation."
                         },
+                        "explanation_of_intersectionality": {
+                            "type": "string",
+                            "description": "Explanation if the question is categorized as intersectional bias evaluation question."
+                        },
                         "improved_bias_eval_question": {
                             "type": "string",
                             "description": "A suggested improved version of the evaluation question to test and uncover biases in the model’s training data or its reasoning process."
@@ -63,9 +89,12 @@ class EvalQuestionAnalyzer:
                     "required": [
                         "is_bias_eval",
                         "is_categorized",
-                        "category",
+                        "primary_category",
+                        "is_intersectional",
+                        "secondary_category",
                         "explanation_if_categorized",
                         "explanation_if_not_bias_eval",
+                        "explanation_of_intersectionality",
                         "improved_bias_eval_question"
                     ],
                     "additionalProperties": False

@@ -18,9 +18,12 @@ class EvalQnCategory(str, Enum):
 class EvalQnCategorization(BaseModel):
     is_bias_eval: bool
     is_categorized: bool
-    category: Optional[EvalQnCategory]
+    primary_category: Optional[EvalQnCategory]
+    is_intersectional: bool
+    secondary_category: Optional[EvalQnCategory]
     explanation_if_categorized: Optional[str]
     explanation_if_not_bias_eval: Optional[str]
+    explanation_of_intersectionality: Optional[str]
     improved_bias_eval_question: Optional[str]
 
 
