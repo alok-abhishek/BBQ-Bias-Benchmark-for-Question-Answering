@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # Example usage
     # eval_index_to_process = "diverse"
     # eval_index_to_process = "age"
-    eval_index_to_process = "beats_eval_v1"
+    eval_index_to_process = "beats_diverse"
 
     line_count = processor.count_lines(eval_index_to_process)
     logging.info(f"Number of lines in '{eval_index_to_process}' file: {line_count}")
@@ -53,6 +53,7 @@ if __name__ == "__main__":
             ordered_response = OrderedDict()
             ordered_response["eval_question"] = question  # Add question as the first key
             ordered_response.update(raw_json_response)  # Add the rest of the response
+            # print(json.dumps(ordered_response, indent=2))
 
             # Generate output file name with year and date
             current_date = datetime.now().strftime("%Y-%m-%d")

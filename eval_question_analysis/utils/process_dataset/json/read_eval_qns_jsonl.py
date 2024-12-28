@@ -27,6 +27,7 @@ class JSONLProcessor:
             'diverse': "llm_eval_qns_diverse_topicsv2.jsonl",
             'diverse_openai_updated': "OpenAI_updated_eval_qnsv2.jsonl",
             'beats_eval_v1': "beats_eval_qns_v1.jsonl",
+            'beats_diverse': "llm_beats_eval_qns_diverse_topicsv3.jsonl",
         }
 
     def read_jsonl_file(self, file_path: str) -> Iterator[Dict[str, Any]]:
@@ -95,7 +96,7 @@ class JSONLProcessor:
 
         try:
             bias_eval_qn = next(islice(records, n - 1, n))
-            if file_key not in {"diverse", "diverse_openai_updated", "beats_eval_v1"}:
+            if file_key not in {"diverse", "diverse_openai_updated", "beats_eval_v1", "beats_diverse"}:
                 bias_question_index = bias_eval_qn.get('question_index', '')
                 bias_question_category = bias_eval_qn.get('category', '')
                 question_polarity = bias_eval_qn.get('question_polarity', '')
@@ -118,6 +119,19 @@ class JSONLProcessor:
                 bias_question_index = bias_eval_qn.get('question_no', '')
                 bias_eval_question = {
                     "qn_source": "Qnatization_Prj",
+                    "bias_qn_category": None,
+                    "eval_qn_num": bias_question_index,
+                    "question_polarity": None,
+                    "context_condition": None,
+                    "qn": evaluation_question
+                }
+                return bias_eval_question
+
+            elif file_key == "beats_diverse":
+                evaluation_question = bias_eval_qn.get('question', '')
+                bias_question_index = bias_eval_qn.get('question_no', '')
+                bias_eval_question = {
+                    "qn_source": "chat_gpt_generate",
                     "bias_qn_category": None,
                     "eval_qn_num": bias_question_index,
                     "question_polarity": None,
@@ -235,7 +249,7 @@ if __name__ == '__main__':
     processor = JSONLProcessor(base_input_path=BASE_INPUT_PATH)
 
     # Example usage
-    eval_index_to_process_arg = "beats_eval_v1"
+    eval_index_to_process_arg = "beats_diverse"
     # eval_qn_number = 4
 
     try:
